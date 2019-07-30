@@ -22,11 +22,14 @@ def NAM(x, P, T, E, area, SpinOff):
     carea = 1.0
     # csnow = 0
     # Set initial states
+    #States = init
+    #States[2] = 0.9*x[1]
     States = np.array([0, 0, 0.9 * x[1], 0, 0, 0, 0, 0.1])
     ## Set initial state conditions
     snow = States[0]
     u = States[1]
     l = States[2]
+    # l = x[1]*0.9
     if1 = States[3]
     if2 = States[4]
     of1 = States[5]
@@ -50,7 +53,16 @@ def NAM(x, P, T, E, area, SpinOff):
     lfrac = l / lmax
     fact = area
     # SimRR = list()
-    Qsim = np.zeros(len(P))
+    Qsim = np.zeros(len(P))     # Simulated Discharge
+    Lsoil = np.zeros(len(P))    # Water content in root zone (l)
+    usoil = np.zeros(len(P))    # Water conten in surface (u)
+    Ssnow = np.zeros(len(P))    # Snow Storage (snow)
+    Qsnow = np.zeros(len(P))    # Snow melt (qs)
+    Qinter = np.zeros(len(P))   # interflow (qif)
+    Eeal = np.zeros(len(P))     # Actual evaporation (eal)
+    Qof = np.zeros(len(P))      # Overlandflow (qof)
+    Qg = np.zeros(len(P))       # Recharge (g)
+    Qbf = np.zeros(len(P))      # Baseflow (bf)
     # f = open("result.txt", "w")
     spin = 0
 
@@ -178,7 +190,16 @@ def NAM(x, P, T, E, area, SpinOff):
         # Update simulated value
         if t >= SpinOff:
             Qsim[t] = (fact * (if2 + of2 + bf))
+            Lsoil[t] = lfrac
+            usoil[t] = u
+            Ssnow[t] = snow
+            Qsnow[t] = qs
+            Qinter[t] = qif
+            Eeal[t] = eal
+            Qof[t] = qof
+            Qg[t] = g
+            Qbf[t] = bf
         # s = str(q)
         # f.write(s + '\n')
 
-    return Qsim
+    return Qsim,Lsoil,usoil,Ssnow,Qsnow,Qinter,Eeal,Qof,Qg,Qbf
