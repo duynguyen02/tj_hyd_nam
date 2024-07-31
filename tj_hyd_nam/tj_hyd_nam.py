@@ -13,7 +13,7 @@ from pandas import Series, DataFrame
 from scipy.optimize import minimize
 
 from .nam_exception import MissingColumnsException, ColumnContainsEmptyDataException, InvalidDatetimeException, \
-    InvalidDatetimeIntervalException
+    InvalidDatetimeIntervalException, InvalidStartDateException, InvalidEndDateException, InvalidDateRangeException
 
 
 @dataclasses.dataclass
@@ -28,8 +28,8 @@ class NAMColNames:
 @dataclasses.dataclass
 class NAMConfig:
     area: float
-    first_date: datetime.datetime
-    last_date: datetime.datetime
+    start_date: datetime.datetime | None = None
+    end_date: datetime.datetime | None = None
     flow_rate: float = 0.0
     interval: float = 24.0
     spin_off: float = 0.0
@@ -82,21 +82,17 @@ class TJHydNAM:
             nam_col_names: NAMColNames,
             nam_config: NAMConfig
     ):
-        self._Q_sim = None
-        proc_dataset = dataset.copy()
-        self._validate_dataset(proc_dataset, nam_config, nam_col_names)
-
         self._dataset = dataset.copy()
         self._nam_col_names = nam_col_names
         self._nam_configs: NAMConfig = nam_config
         self._nam_statistic: NAMStatistic = NAMStatistic()
 
-        self._size: int = proc_dataset.size
-        self._date: Series = proc_dataset[nam_col_names.date]
-        self._T: Series = proc_dataset[nam_col_names.temperature]  # temperature
-        self._P: Series = proc_dataset[nam_col_names.precipitation]  # precipitation
-        self._E: Series = proc_dataset[nam_col_names.evapotranspiration]  # evapotranspiration
-        self._Q_obs: Series = proc_dataset[nam_col_names.discharge]  # observed_discharge
+        self._size: int | None = None
+        self._date: Series | None = None
+        self._T: Series | None = None
+        self._P: Series | None = None
+        self._E: Series | None = None
+        self._Q_obs: Series | None = None  # discharge
         self._U_soil = None  # upper_soil_layer_moisture
         self._S_snow = None  # snow_storage
         self._Q_snow = None  # snowmelt_discharge
@@ -105,19 +101,18 @@ class TJHydNAM:
         self._Q_of = None  # overland_flow
         self._Q_g = None  # groundwater_discharge
         self._Q_bf = None  # baseflow
-        self._Q_sim: ndarray[Any, dtype[floating[_64Bit]]] = np.zeros(self._size)  # simulator_discharge
-        self._L_soil: ndarray[Any, dtype[floating[_64Bit]]] = np.zeros(self._size)  # soil_moisture
+        self._Q_sim: ndarray[Any, dtype[floating[_64Bit]]] | None = None  # simulator_discharge
+        self._L_soil: ndarray[Any, dtype[floating[_64Bit]]] | None = None  # soil_moisture
 
         self._calculate()
 
-
-
-    @staticmethod
     def _validate_dataset(
-            dataset: DataFrame,
-            nam_config: NAMConfig,
-            nam_col_names: NAMColNames
+            self
     ):
+        dataset = self._dataset.copy()
+        nam_col_names = self._nam_col_names
+        nam_config = self._nam_configs
+
         required_columns = [
             nam_col_names.date,
             nam_col_names.temperature,
@@ -151,6 +146,37 @@ class TJHydNAM:
         is_valid_interval_hours = dataset['Interval'].dropna().eq(interval_hours).all()
         if not is_valid_interval_hours:
             raise InvalidDatetimeIntervalException()
+        self._dataset = dataset.drop(columns=['Interval'])
+
+        start = 0
+        end = dataset.size
+        if nam_config.start_date is not None:
+            valid = False
+            for i in range(len(dataset.index)):
+                if str(dataset[nam_col_names.date][i]) == str(nam_config.start_date):
+                    valid = True
+                    start = i
+                    break
+
+            if not valid:
+                raise InvalidStartDateException()
+
+        if nam_config.end_date is not None:
+            valid = False
+            for i in range(len(dataset.index)):
+                if str(dataset[nam_col_names.date][i]) == str(nam_config.end_date):
+                    valid = True
+                    end = i + 1
+                    break
+
+            if not valid:
+                raise InvalidEndDateException()
+
+        if nam_config.start_date is not None and nam_config.end_date is not None:
+            if nam_config.start_date > nam_config.end_date:
+                raise InvalidDateRangeException()
+
+        return start, end
 
     def _nam_cal(self, x):
         qofmin, beta, pmm, carea = 0.4, 0.1, 10, 1.0
@@ -263,12 +289,30 @@ class TJHydNAM:
         self._nam_cal(params)
         self._stats()
 
-    def _init_data(self):
-        pass
+    def _init_data(self, start: int, end: int):
+        proc_dataset = self._dataset.copy()
+        proc_dataset = proc_dataset.iloc[start: end]
+
+        self._size: int = proc_dataset.size
+        self._date: Series = proc_dataset[self._nam_col_names.date]
+        self._T: Series = proc_dataset[self._nam_col_names.temperature]  # temperature
+        self._P: Series = proc_dataset[self._nam_col_names.precipitation]  # precipitation
+        self._E: Series = proc_dataset[self._nam_col_names.evapotranspiration]  # evapotranspiration
+        self._Q_obs: Series = proc_dataset[self._nam_col_names.discharge]  # observed_discharge
+        self._U_soil = None  # upper_soil_layer_moisture
+        self._S_snow = None  # snow_storage
+        self._Q_snow = None  # snowmelt_discharge
+        self._Q_inter = None  # interflow_discharge
+        self._E_eal = None  # actual_evapotranspiration
+        self._Q_of = None  # overland_flow
+        self._Q_g = None  # groundwater_discharge
+        self._Q_bf = None  # baseflow
+        self._Q_sim: ndarray[Any, dtype[floating[_64Bit]]] = np.zeros(self._size)  # simulator_discharge
+        self._L_soil: ndarray[Any, dtype[floating[_64Bit]]] = np.zeros(self._size)  # soil_moisture
 
     def _calculate(self):
-        # self._validate_dataset()
-        self._init_data()
+        start, end = self._validate_dataset()
+        self._init_data(start, end)
         self._run(False)
 
     def optimize(self):
@@ -308,18 +352,17 @@ class TJHydNAM:
 
     def re_config(self, nam_config: NAMConfig):
         self._nam_configs = nam_config
-        self._validate_dataset(self._dataset, self._nam_configs, self._nam_col_names)
         self._calculate()
 
     def re_config_by_props(self, **kwargs):
         attributes = [
             'area', 'flow_rate', 'interval', 'spin_off', 'umax', 'lmax', 'cqof',
-            'ckif', 'ck12', 'tof', 'tif', 'tg', 'ckbf', 'csnow', 'snowtemp'
+            'ckif', 'ck12', 'tof', 'tif', 'tg', 'ckbf', 'csnow', 'snowtemp',
+            'start_date', 'end_date'
         ]
 
         for attr in attributes:
             setattr(self._nam_configs, attr, kwargs.get(attr, getattr(self._nam_configs, attr)))
-        self._validate_dataset(self._dataset, self._nam_configs, self._nam_col_names)
         self._calculate()
 
     def show(self, save: bool = False, filename: str = 'result.png'):
@@ -341,6 +384,20 @@ class TJHydNAM:
         if save:
             fig.savefig(filename, dpi=300)
 
+    def show_discharge(self):
+        df = self.to_dataframe()
+        plt.figure(figsize=(12, 6))
+        plt.plot(df['date'], df['observed_discharge'], label='Observed Discharge', color='blue')
+        plt.plot(df['date'], df['simulator_discharge'], label='Simulator Discharge', color='red')
+
+        # Thêm tiêu đề và nhãn cho các trục
+        plt.title('Comparison of Observed Discharge and Simulator Discharge')
+        plt.xlabel('Date')
+        plt.ylabel('Discharge')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     def __str__(self):
         return f"""TJ_HYD_NAM 🍃 🌧 ☔ 💦
 FROM: {self._date.iloc[0]}
@@ -348,3 +405,6 @@ TO: {self._date.iloc[-1]}
 {self._nam_configs}
 {self._nam_statistic}
         """
+
+    def __repr__(self):
+        return self.__str__()
