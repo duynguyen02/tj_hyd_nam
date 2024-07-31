@@ -1,6 +1,8 @@
+import copy
 import dataclasses
 import datetime
 import math
+import pickle
 from typing import Any
 
 import numpy as np
@@ -348,7 +350,7 @@ class TJHydNAM:
 
     @property
     def config(self):
-        return self._nam_configs
+        return copy.deepcopy(self._nam_configs)
 
     def re_config(self, nam_config: NAMConfig):
         self._nam_configs = nam_config
@@ -375,8 +377,8 @@ class TJHydNAM:
             axes[i].plot(date, df[column], label=column)
             axes[i].set_title(column)
             axes[i].legend()
-        axes[-1].plot(date, df['simulator_discharge'], label='simulator_discharge', color='blue')
-        axes[-1].plot(date, df['observed_discharge'], label='observed_discharge', color='orange')
+        axes[-1].plot(date, df['simulator_discharge'], label='simulator_discharge', color='red')
+        axes[-1].plot(date, df['observed_discharge'], label='observed_discharge', color='blue')
         axes[-1].set_title('Simulator vs Observed Discharge')
         axes[-1].legend()
         plt.tight_layout()
@@ -384,7 +386,7 @@ class TJHydNAM:
         if save:
             fig.savefig(filename, dpi=300)
 
-    def show_discharge(self):
+    def show_discharge(self, save: bool = False, filename: str = 'result.png'):
         df = self.to_dataframe()
         plt.figure(figsize=(12, 6))
         plt.plot(df['date'], df['observed_discharge'], label='Observed Discharge', color='blue')
@@ -396,7 +398,18 @@ class TJHydNAM:
         plt.ylabel('Discharge')
         plt.legend()
         plt.grid(True)
+        if save:
+            plt.savefig(filename, dpi=300)
         plt.show()
+
+    def save(self, filename: str = None):
+        with open(f'{filename}.tjnam' if filename is not None else 'nam_model.tjnam', 'wb') as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, model_path: str) -> 'TJHydNAM':
+        with open(model_path, 'rb') as file:
+            return pickle.load(file)
 
     def __str__(self):
         return f"""TJ_HYD_NAM 🍃 🌧 ☔ 💦
