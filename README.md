@@ -1,6 +1,7 @@
 # TJ_HYD_NAM
 
-A Python library implementing the NedborAfstromnings (NAM) hydrological model.
+Python implementation of NedborAfstromnings Model (NAM) lumped rainfall–runoff model, based on the original code
+from [NAM_Model](https://github.com/hckaraman/NAM_Model) by [hckaraman](https://github.com/hckaraman)
 
 ### Installation
 
@@ -12,7 +13,8 @@ pip install tj_hyd_nam
 
 #### Prepare the Dataset
 
-The dataset should include columns: Date, Temperature, Precipitation, Evapotranspiration, and Discharge, with column names customizable.
+The dataset should include columns: Date, Temperature, Precipitation, Evapotranspiration, and Discharge, with column
+names customizable.
 
 | Date       | Temp | Q       | P   | E    |
 |------------|------|---------|-----|------|
