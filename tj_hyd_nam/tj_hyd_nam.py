@@ -108,6 +108,70 @@ class TJHydNAM:
 
         self._calculate()
 
+    @property
+    def size(self) -> int:
+        return self._size
+
+    @property
+    def date(self) -> Series:
+        return self._date
+
+    @property
+    def T(self) -> Series:
+        return self._T
+
+    @property
+    def P(self) -> Series:
+        return self._P
+
+    @property
+    def E(self) -> Series:
+        return self._E
+
+    @property
+    def Q_obs(self) -> Series:
+        return self._Q_obs
+
+    @property
+    def U_soil(self):
+        return self._U_soil
+
+    @property
+    def S_snow(self):
+        return self._S_snow
+
+    @property
+    def Q_snow(self):
+        return self._Q_snow
+
+    @property
+    def Q_inter(self):
+        return self._Q_inter
+
+    @property
+    def E_eal(self):
+        return self._E_eal
+
+    @property
+    def Q_of(self):
+        return self._Q_of
+
+    @property
+    def Q_g(self):
+        return self._Q_g
+
+    @property
+    def Q_bf(self):
+        return self._Q_bf
+
+    @property
+    def Q_sim(self) -> ndarray[Any, dtype[floating[_64Bit]]]:
+        return self._Q_sim
+
+    @property
+    def L_soil(self) -> ndarray[Any, dtype[floating[_64Bit]]]:
+        return self._L_soil
+
     def _validate_dataset(
             self
     ):

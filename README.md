@@ -186,3 +186,23 @@ PRED_NAM = TJHydNAM(
     SAVED_NAM.config
 )
 ```
+
+#### Accessing calculated variables (>=1.1.0)
+```python
+NAM.size       # Access the value of _size
+NAM.date       # Access the value of _date
+NAM.T          # Access the value of _T (temperature series)
+NAM.P          # Access the value of _P (precipitation series)
+NAM.E          # Access the value of _E (evaporation series)
+NAM.Q_obs      # Access the value of _Q_obs (observed discharge)
+NAM.U_soil     # Access the value of _U_soil (upper soil layer moisture)
+NAM.S_snow     # Access the value of _S_snow (snow storage)
+NAM.Q_snow     # Access the value of _Q_snow (snowmelt discharge)
+NAM.Q_inter    # Access the value of _Q_inter (interflow discharge)
+NAM.E_eal      # Access the value of _E_eal (actual evapotranspiration)
+NAM.Q_of       # Access the value of _Q_of (overland flow)
+NAM.Q_g        # Access the value of _Q_g (groundwater discharge)
+NAM.Q_bf       # Access the value of _Q_bf (baseflow)
+NAM.Q_sim      # Access the value of _Q_sim (simulator discharge)
+NAM.L_soil     # Access the value of _L_soil (soil moisture)
+```
