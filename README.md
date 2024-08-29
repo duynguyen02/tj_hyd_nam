@@ -1,20 +1,20 @@
 # TJ_HYD_NAM
 
-Python implementation of NedborAfstromnings Model (NAM) lumped rainfall–runoff model, based on the original code
-from [NAM_Model](https://github.com/hckaraman/NAM_Model) by [hckaraman](https://github.com/hckaraman)
+**TJ_HYD_NAM** is a Python implementation of the NedborAfstromnings Model (NAM), a lumped rainfall–runoff model. This implementation is based on the original code from [NAM_Model](https://github.com/hckaraman/NAM_Model) by [hckaraman](https://github.com/hckaraman).
 
-### Installation
+## Installation
 
-```
+You can install the package via pip:
+
+```bash
 pip install tj_hyd_nam
 ```
 
-### Getting Started
+## Getting Started
 
-#### Prepare the Dataset
+### 1. Prepare the Dataset
 
-The dataset should include columns: Date, Temperature, Precipitation, Evapotranspiration, and Discharge, with column
-names customizable.
+The dataset should contain the following columns: Date, Temperature, Precipitation, Evapotranspiration, and Discharge. Column names can be customized.
 
 | Date       | Temp | Q       | P   | E    |
 |------------|------|---------|-----|------|
@@ -27,9 +27,9 @@ names customizable.
 | 10/15/2016 | 11.1 | 0.31299 | 0   | 3.41 |
 | ...        | ...  | ...     | ... | ...  |
 
-The time intervals between dates must be equal (e.g., 24 hours) for the model to function accurately.
+Ensure that the time intervals between dates are consistent (e.g., 24 hours) for accurate model performance.
 
-#### Initialize the NAM Model
+### 2. Initialize the NAM Model
 
 ```python
 import pandas as pd
@@ -37,7 +37,8 @@ from tj_hyd_nam import TJHydNAM, NAMColNames, NAMConfig
 
 # Load the dataset
 df = pd.read_csv('data_example.csv')
-# Specify the column names as required
+
+# Specify the column names
 nam_col_names = NAMColNames(
     date='Date',
     temperature='Temp',
@@ -45,6 +46,7 @@ nam_col_names = NAMColNames(
     evapotranspiration='E',
     discharge='Q'
 )
+
 # Configure the model parameters
 nam_config = NAMConfig(
     area=58.8,
@@ -64,56 +66,41 @@ nam_config = NAMConfig(
     csnow=2.31,
     snowtemp=3.51,
 )
+
+# Initialize the NAM model
 NAM = TJHydNAM(
     dataset=df,
     nam_col_names=nam_col_names,
     nam_config=nam_config
 )
+
 print(NAM)
 ```
 
-The output will detail the NAM model based on the loaded dataset:
+The output will display details of the NAM model based on the loaded dataset.
 
-```
-TJ_HYD_NAM 🍃 🌧 ☔ 💦
-FROM: 2016-10-09 00:00:00+00:00
-TO: 2018-09-30 00:00:00+00:00
-NAMConfig(area=58.8, start_date=None, end_date=None, flow_rate=0.6805555555555555, interval=24.0, spin_off=0.0, umax=0.97, lmax=721.56, cqof=0.18, ckif=495.91, ck12=25.16, tof=0.97, tif=0.11, tg=0.19, ckbf=1121.74, csnow=2.31, snowtemp=3.51)
-NAMStatistic(nse=-0.17835445482281131, rmse=1.7864602332317054, fbias=75.23828249740461)
-```
-
-#### Display and Save Graphs
+### 3. Display and Save Graphs
 
 ```python
 # Plot and save the discharge comparison graph
 NAM.show_discharge(save=True, filename='discharge.png')
+
 # Plot and save all calculated model information
 NAM.show(save=True, filename='result.png')
 ```
 
-#### Optimize the Model
+### 4. Optimize the Model
 
 ```python
 NAM.optimize()
 print(NAM)
 ```
 
-```shell
-Optimization terminated successfully    (Exit mode 0)
-            Current function value: 2.036882878807083
-            Iterations: 7
-            Function evaluations: 70
-            Gradient evaluations: 7
-TJ_HYD_NAM 🍃 🌧 ☔ 💦
-FROM: 2016-10-09 00:00:00+00:00
-TO: 2018-09-30 00:00:00+00:00
-NAMConfig(area=58.8, start_date=None, end_date=None, flow_rate=0.6805555555555555, interval=24.0, spin_off=0.0, umax=0.97, lmax=721.56, cqof=0.18, ckif=495.91, ck12=25.16, tof=0.97, tif=0.11, tg=0.19, ckbf=1121.74, csnow=2.31, snowtemp=3.51)
-NAMStatistic(nse=-0.5318680456177058, rmse=2.036882878807083, fbias=91.77841692580132)
-```
+The optimization process will refine the model parameters and display the updated configuration.
 
-#### Reconfigure the Model Based on Properties
+### 5. Reconfigure the Model Based on Properties
 
-The model parameters will change and be recalculated based on new properties.
+You can reconfigure the model parameters and recalculate the results based on new date ranges or other properties.
 
 ```python
 NAM.re_config_by_props(
@@ -122,7 +109,9 @@ NAM.re_config_by_props(
 )
 ```
 
-#### Reconfigure All Parameters
+### 6. Reconfigure All Parameters
+
+To fully reconfigure the model, use:
 
 ```python
 NAM.re_config(
@@ -147,31 +136,33 @@ NAM.re_config(
 )
 ```
 
-#### Save Calculated Model Data
+### 7. Save Calculated Model Data
 
 ```python
 NAM.save_to_csv('result.csv')
 ```
 
-#### Convert Calculated Data to DataFrame
+### 8. Convert Calculated Data to DataFrame
 
 ```python
 nam_df = NAM.to_dataframe()
 ```
 
-#### Save the Model
+### 9. Save and Load the Model
+
+Save the current model configuration:
 
 ```python
 NAM.save('nam_model')
 ```
 
-#### Load a Saved Model
+Load a saved model:
 
 ```python
 SAVED_NAM = NAM.load('nam_model.tjnam')
 ```
 
-#### Use the Previous Model's Configuration for Prediction
+### 10. Use the Previous Model's Configuration for Prediction
 
 ```python
 PRED_NAM = TJHydNAM(
@@ -187,7 +178,10 @@ PRED_NAM = TJHydNAM(
 )
 ```
 
-#### Accessing calculated variables (>=1.1.0)
+### 11. Accessing Calculated Variables (>=1.1.0)
+
+You can access various calculated variables directly:
+
 ```python
 NAM.size       # Access the value of _size
 NAM.date       # Access the value of _date
@@ -203,6 +197,36 @@ NAM.E_eal      # Access the value of _E_eal (actual evapotranspiration)
 NAM.Q_of       # Access the value of _Q_of (overland flow)
 NAM.Q_g        # Access the value of _Q_g (groundwater discharge)
 NAM.Q_bf       # Access the value of _Q_bf (baseflow)
-NAM.Q_sim      # Access the value of _Q_sim (simulator discharge)
+NAM.Q_sim      # Access the value of _Q_sim (simulated discharge)
 NAM.L_soil     # Access the value of _L_soil (soil moisture)
 ```
+
+## Exception Classes
+
+### `MissingColumnsException`
+
+Raised when one or more required columns are missing from the dataset. The exception message specifies which column is missing, helping users to correct their data.
+
+### `ColumnContainsEmptyDataException`
+
+Raised when a specified column contains empty data. This ensures that critical data is complete before proceeding with the model.
+
+### `InvalidDatetimeException`
+
+Raised when an invalid datetime value is encountered. This could be due to incorrect formatting or values that do not conform to the expected standards.
+
+### `InvalidDatetimeIntervalException`
+
+Raised when an invalid datetime interval is provided. This ensures that the interval between dates or times is logically consistent.
+
+### `InvalidStartDateException`
+
+Raised when the provided start date is invalid. This helps catch errors where the beginning of a time-based event or range is not properly defined.
+
+### `InvalidEndDateException`
+
+Raised when the provided end date is invalid. This ensures the end of a time-based event or range is correctly defined.
+
+### `InvalidDateRangeException`
+
+Raised when the date range provided is invalid, such as when the start date is after the end date.
